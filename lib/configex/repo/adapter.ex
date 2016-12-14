@@ -10,4 +10,17 @@ defmodule Configex.Repo.Adapter do
 
   @callback put(atom, any, any) :: :ok | {:error, any}
 
+  defmodule NonNotifiable do
+
+    defmacro __using__(_) do
+      quote do
+        @behaviour Configex.Repo.Adapter
+        def init(opts), do: opts
+
+        def get(atom, pid, any), do: get(atom, any)
+
+        defoverridable [init: 1]
+      end
+    end
+  end
 end
