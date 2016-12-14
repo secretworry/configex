@@ -16,13 +16,32 @@
     
     # use Configex
     # get a configuration
-    MyApp.Configex.get(:integer_config)
+    {:ok, 5} = MyApp.Configex.get(:integer_config)
+    5 = MyApp.Configex.get!(:integer_config)
+    
     # set a configuration, and persist it to a repo
-    MyApp.Configex.put(:string_config, "new_value")
+    :ok = MyApp.Configex.put(:string_config, "new_value")
     
     # set a value of invalid type will make the call fail
     MyApp.Configex.put(:struct_config, "not_an_valid_value")
     
-    # cast a input from user
-    MyApp.Configex.cast(:struct_config, %{"enable_notification" => false})
+    # cast a input from user input
+    {:ok, %MyApp.UserPreferences{enable_notification: false}} = MyApp.Configex.cast(:struct_config, %{"enable_notification" => false})
+    {:ok, %MyApp.UserPreferences{enable_notification: false}} = MyApp.Configex.get(:struct_config)
   ```
+
+# Usage
+
+  1. Create an `Configex.Repo.Adapter` to handle config persistence
+  
+  2. Create a module `use Configex`, and define configs in this module
+  
+  3. Associate the adapter with the created `Configex` in the config file
+  
+    ```elixir
+    # in config.exs
+    config :my_app, MyApp.Configex,
+      adapter: {MyApp.Configex.EctoRepo, repo: MyApp.Repo}
+    ```
+    
+  4. Add the defined `Configex` which is a GenServer to the supervision tree of the Application, 
