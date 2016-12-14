@@ -5,6 +5,7 @@ defmodule Configex.Mixfile do
     [app: :configex,
      version: "0.1.0",
      elixir: "~> 1.3",
+     compilers: [:gettext] ++ Mix.compilers,
      elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
