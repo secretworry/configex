@@ -5,6 +5,12 @@ defmodule Configex.Types do
 
   @builtin_types [:string, :integer, :float, :map, :list]
 
+  def default_value(:list), do: []
+  def default_value({:list, _}), do: []
+  def default_value(:map), do: %{}
+  def default_value({:map, _}), do: %{}
+  def default_value(_), do: nil
+
   def validate_type!(type) when type in @builtin_types, do: :ok
   def validate_type!({:list, sub_type}), do: validate_type!(sub_type)
   def validate_type!({:map, sub_type}), do: validate_type!(sub_type)

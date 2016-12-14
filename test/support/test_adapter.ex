@@ -17,4 +17,9 @@ defmodule Configex.TestAdapter do
     Agent.update(__MODULE__, fn map -> Map.put(map, key, value) end)
     :ok
   end
+
+  def reset do
+    Agent.update(__MODULE__, fn _ -> %{} end)
+    :ok
+  end
 end

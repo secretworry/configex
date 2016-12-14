@@ -16,6 +16,10 @@ defmodule Configex.Config do
   @enfored_keys ~w{module name type line file}a
   defstruct [:module, :name, :type, :line, :file, :validator, default: nil]
 
+  def call_validator(nil, module, value) do
+    :ok
+  end
+
   def call_validator({method, opts}, module, value) do
     apply(module, method, [value, opts])
   end

@@ -10,6 +10,7 @@ defmodule Configex do
   @callback cast(name :: atom, any) :: {:ok, any} | {:error, any} | no_return
   @callback cast!(name :: atom, any) :: any | no_return
   @callback changed() :: :ok
+  @callback changed!() :: :ok | {:error, any}
 
   defmacro __using__(opts) do
     quote do
