@@ -1,5 +1,6 @@
 defmodule Configex.Builder do
 
+
   @configs :__configex_configs__
   @otp_app :__configex_otp_app__
   @adapter :__configex_adapter__
@@ -8,6 +9,7 @@ defmodule Configex.Builder do
   defmacro __using__(opts) do
     quote do
       import unquote(__MODULE__), only: [config: 2, config: 3]
+      require Configex.Gettext
       Module.register_attribute __MODULE__, unquote(@configs), accumulate: false, persist: false
       {otp_app, adapter, config} = Configex.Builder.parse_config(__MODULE__, unquote(opts))
       Module.put_attribute __MODULE__, unquote(@otp_app), otp_app
@@ -137,11 +139,13 @@ defmodule Configex.Builder do
       defp do_put(config, value) do
         with :ok <- Configex.Types.validate_value(config.type, to_string(config.name), value) do
           case Configex.Config.call_validator(config.validator, config.module, value) do
-            :ok ->
+            result when result in [:ok, true] ->
               {adapter, opts} = __configex__(:adapter)
               adapter.put(config.name, value, opts)
+            false ->
+              {:error, Configex.Gettext.dgettext("error", "Invalid value %{value}", value: inspect(value))}
             {:error, _} = error -> error
-            value -> raise "Expect validator #{inspect config.validator} to return :ok, or {:error error} but got #{inspect value}"
+            value -> raise "Expect validator #{inspect config.validator} to return :ok, {:error error}, true or false, but got #{inspect value}"
           end
         end
       end
@@ -239,6 +243,11 @@ defmodule Configex.Builder do
     {[module: env.module, name: name, type: type, default: default_value, validator: validator, line: env.line, file: env.file], code}
   end
 
+  def method_name(name) do
+    "__configex_validator_#{name}__" |> String.to_atom
+  end
+
+
   def init_validator(nil, _module, _name) do
     {nil, nil}
   end
@@ -258,20 +267,56 @@ defmodule Configex.Builder do
   end
 
   def init_validator({:fn, _, [{:->, _, [[_], _]}|_]} = func, _module, name) do
-    method_name = "__configex_validator_#{name}__" |> String.to_atom
-    {method_name, quote do
+    method_name = method_name(name)
+    {method_name, quote_function_call(method_name, func)}
+  end
+
+  # init validator like &Module.foo/1
+  def init_validator({:&, _, [{:/, _, [_, arity]}]} = func, _module, name) do
+    if arity == 1 do
+      method_name = method_name(name)
+      {method_name, quote_function_call(method_name, func)}
+    else
+      invalid_validator(func, name)
+    end
+  end
+
+  def init_validator({:&, _, body} = func, _module, name) do
+    placeholder_count = count_placeholder(body)
+    if placeholder_count == 1 do
+      method_name = method_name(name)
+      {method_name, quote_function_call(method_name, func)}
+    else
+      invalid_validator(func, name)
+    end
+  end
+
+  def init_validator(func, _module, name) do
+    invalid_validator(func, name)
+  end
+
+  def quote_function_call(method_name, func) do
+    quote do
       def unquote(method_name)(value) do
         try do
           unquote(func).(value)
         rescue
-          _ -> {:error, "Invalid value #{inspect value}"}
+          _ -> {:error, Configex.Gettext.dgettext("error", "Invalid value %{value}", value: inspect(value))}
         end
       end
-    end}
+    end
   end
 
-  def init_validator(func, _module, name) do
+  defp invalid_validator(func, name) do
     raise ArgumentError, "validator should be atom, {atom, any} or function/1 but got #{func |> Macro.to_string} for #{name}"
+  end
+
+  defp count_placeholder(body) do
+    {_, map_set} = Macro.prewalk(body, MapSet.new, fn
+      {:&, _, [id]} = node, map_set-> {node, MapSet.put(map_set, id)}
+      node, map_set -> {node, map_set}
+    end)
+    MapSet.size(map_set)
   end
 
   def validate_name!(name, configs) do

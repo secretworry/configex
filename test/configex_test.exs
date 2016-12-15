@@ -16,6 +16,8 @@ defmodule ConfigexTest do
     config :map_config, :map
     config :struct_config, ConfigValue, default: %ConfigValue{}
     config :string_validator_config, :string, validator: fn "a" -> :ok end
+    config :capture_validator_config, :string, validator: &ConfigexTest.validate_string/1
+    config :non_negative_config, :integer, validator: &(&1 >= 0)
   end
 
   setup_all do
@@ -27,6 +29,9 @@ defmodule ConfigexTest do
     TestAdapter.reset
     SampleConfig.changed!
   end
+
+  def validate_string("a"), do: :ok
+  def validate_string(_), do: {:error, "Should be a"}
 
   describe "__configex__" do
     test "should export __configex__(:adapter)" do
@@ -60,11 +65,18 @@ defmodule ConfigexTest do
       assert :ok == SampleConfig.put(:string_config, "a")
       assert SampleConfig.get!(:string_config) == "a"
       assert TestAdapter.get(:string_config, []) == {:ok, "a"}
+
+      assert :ok == SampleConfig.put(:string_validator_config, "a")
+      assert :ok == SampleConfig.put(:capture_validator_config, "a")
+      assert :ok == SampleConfig.put(:non_negative_config, 8)
     end
 
     test "should raise error for setting an invalid value" do
-      {:error, "integer_config should be a integer but got a"} = SampleConfig.put(:integer_config, "a")
-      {:error, "float_config should be a float but got a"} = SampleConfig.put(:float_config, "a")
+      assert {:error, "integer_config should be a integer but got a"} == SampleConfig.put(:integer_config, "a")
+      assert {:error, "float_config should be a float but got a"} == SampleConfig.put(:float_config, "a")
+      assert {:error, "Invalid value \"b\""} == SampleConfig.put(:string_validator_config, "b")
+      assert {:error, "Invalid value -1"} == SampleConfig.put(:non_negative_config, -1)
+      assert {:error, "Should be a"} == SampleConfig.put(:capture_validator_config, "b")
     end
   end
 
