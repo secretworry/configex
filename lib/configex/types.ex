@@ -104,7 +104,11 @@ defmodule Configex.Types do
   def cast(:float, other), do: cast_error(:float, other)
 
   def cast(:list, list) when is_list(list), do: {:ok, list}
-  def cast(:list, value) when is_integer(value) or is_float(value) or is_binary(value), do: {:ok, [value]}
+  def cast(:list, binary) when is_binary(binary) do
+    list = String.split(binary, ",", trim: true) |> Enum.map(&String.trim/1)
+    {:ok, list}
+  end
+  def cast(:list, value) when is_integer(value) or is_float(value), do: {:ok, [value]}
   def cast(:list, other), do: cast_error(:list, other)
 
   def cast(:map, map) when is_map(map), do: {:ok, map}

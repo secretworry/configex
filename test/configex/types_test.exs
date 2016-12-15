@@ -104,6 +104,7 @@ defmodule Configex.TypesTest do
       assert {:ok, [4]} == Types.cast(:list, 4)
       assert {:ok, [1.5]} == Types.cast(:list, 1.5)
       assert {:ok, ["string"]} == Types.cast(:list, "string")
+      assert {:ok, ~w{a b c}} == Types.cast(:list, "a,b,c")
       assert {:error, "expect a :list but got %{}"} == Types.cast(:list, %{})
     end
 
@@ -114,8 +115,10 @@ defmodule Configex.TypesTest do
 
     test "should cast a list of the same type" do
       assert {:ok, [1, 2, 3]} == Types.cast({:list, :integer}, ~w{1 2 3})
+      assert {:ok, [1, 2, 3]} == Types.cast({:list, :integer}, "1,2,3")
       assert {:ok, ["1", "2", "3"]} == Types.cast({:list, :string}, ~w{1 2 3})
       assert {:ok, [1.0, 2.0, 3.0]} == Types.cast({:list, :float}, ~w{1 2 3})
+      assert {:ok, [1.0, 2.0, 3.0]} == Types.cast({:list, :float}, "1.0, 2.0, 3.0")
       assert {:error, "expect a {:list, :integer} but got [\"a\", \"b\", \"c\"]"} == Types.cast({:list, :integer}, ~w{a b c})
     end
 
