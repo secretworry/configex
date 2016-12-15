@@ -58,6 +58,10 @@ defmodule ConfigexTest do
       assert %{}              == SampleConfig.get!(:map_config)
       assert %ConfigValue{}   == SampleConfig.get!(:struct_config)
     end
+
+    test "return error for key not exist" do
+      assert {:error, "Config not_exist does not exist"} == SampleConfig.get(:not_exist)
+    end
   end
 
   describe "put/2" do
@@ -78,6 +82,10 @@ defmodule ConfigexTest do
       assert {:error, "Invalid value -1"} == SampleConfig.put(:non_negative_config, -1)
       assert {:error, "Should be a"} == SampleConfig.put(:capture_validator_config, "b")
     end
+
+    test "return error for key not exist" do
+      assert {:error, "Config not_exist does not exist"} == SampleConfig.put(:not_exist, "1")
+    end
   end
 
   describe "cast/2" do
@@ -85,6 +93,10 @@ defmodule ConfigexTest do
       assert {:ok, 1} == SampleConfig.cast(:integer_config, "1")
       assert SampleConfig.get!(:integer_config) == 1
       assert TestAdapter.get(:integer_config, []) == {:ok, 1}
+    end
+
+    test "return error for key not exist" do
+      assert {:error, "Config not_exist does not exist"} == SampleConfig.cast(:not_exist, "1")
     end
   end
 end

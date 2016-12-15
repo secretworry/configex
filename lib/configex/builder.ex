@@ -38,7 +38,7 @@ defmodule Configex.Builder do
       def __configex__(:config), do: unquote(config |> Macro.escape)
       unquote(quoted_config_accessors)
       def __configex__(:config, config) do
-        raise ArgumentError, "Cannot find config #{inspect config}"
+        nil
       end
       def __configex__(:configs), do: unquote(configs |> Macro.escape)
     end
@@ -169,21 +169,33 @@ defmodule Configex.Builder do
       require Configex.Gettext
 
       def get(name) do
-        config = __configex__(:config, name)
-        GenServer.call(__MODULE__, {:get, config})
+        with {:ok, config} <- do_get_config(name) do
+          GenServer.call(__MODULE__, {:get, config})
+        end
       end
 
       def put(name, value) do
-        config = __configex__(:config, name)
-        GenServer.call(__MODULE__, {:put, config, value})
+        with {:ok, config} <- do_get_config(name) do
+          GenServer.call(__MODULE__, {:put, config, value})
+        end
       end
 
       def cast(name, value) do
-        config = __configex__(:config, name)
-        with {:ok, value} <- Configex.Types.cast(config.type, value),
-             :ok          <- put(name, value),
+        with {:ok, config} <- do_get_config(name),
+             {:ok, value}  <- Configex.Types.cast(config.type, value),
+             :ok           <- put(name, value),
          do: {:ok, value}
       end
+
+      defp do_get_config(name) do
+        case __configex__(:config, name) do
+          nil ->
+            {:error, Configex.Gettext.dgettext("error", "Config %{name} does not exist", name: name)}
+          config ->
+            {:ok, config}
+        end
+      end
+
 
       def changed(name) do
         config = __configex__(:config, name)
