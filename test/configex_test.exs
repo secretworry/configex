@@ -20,6 +20,17 @@ defmodule ConfigexTest do
     config :non_negative_config, :integer, validator: &(&1 >= 0)
   end
 
+  defmodule ErroneousAdapter do
+    use Configex.Repo.Adapter.NonNotifiable
+    def ensure_all_started(_, _), do: {:error, "adapter error"}
+    def get(_, _), do: {:ok, nil}
+    def put(_, _, _), do: :ok
+  end
+
+  defmodule ErroneousConfig do
+    use Configex, otp_app: :configex, adapter: ErroneousAdapter
+  end
+
   setup_all do
     SampleConfig.start_link
     :ok
@@ -98,5 +109,9 @@ defmodule ConfigexTest do
     test "return error for key not exist" do
       assert {:error, "Config not_exist does not exist"} == SampleConfig.cast(:not_exist, "1")
     end
+  end
+
+  test "starting an adapter error should prevent the configex from starting" do
+    assert {:error, "adapter error"} == ErroneousConfig.start
   end
 end

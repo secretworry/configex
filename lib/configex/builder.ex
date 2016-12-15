@@ -63,12 +63,21 @@ defmodule Configex.Builder do
       end
 
       def init(_) do
-        case do_reload do
-          {:ok, values} ->
-            Process.flag(:trap_exit, true)
-            {:ok, {:loaded, values}}
+        with {:ok, _}      <- do_ensure_adapter_started(),
+             {:ok, values} <- do_reload do
+          Process.flag(:trap_exit, true)
+          {:ok, {:loaded, values}}
+        else
           {:error, error} -> {:stop, error}
+          error -> {:stop, error}
         end
+      end
+
+      defp do_ensure_adapter_started() do
+        {adapter, opts} = __configex__(:adapter)
+        # Config is important, so we assuming any abnormal error in the config server should tears down the node
+        # TODO think about this later
+        adapter.ensure_all_started(:transient, opts)
       end
 
       defp do_reload do

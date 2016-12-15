@@ -4,6 +4,8 @@ defmodule Configex.Repo.Adapter do
 
   @callback init(opts) :: any
 
+  @callback ensure_all_started(type :: :application.restart_type, any) :: {:ok, [atom]}  | {:error, atom}
+
   @callback get(atom, pid, any) :: {:ok, any} | {:error, any}
 
   @callback get(atom, any) :: {:ok, any} | {:error, any}
@@ -19,7 +21,9 @@ defmodule Configex.Repo.Adapter do
 
         def get(atom, pid, any), do: get(atom, any)
 
-        defoverridable [init: 1]
+        def ensure_all_started(_, _), do: {:ok, []}
+
+        defoverridable [init: 1, ensure_all_started: 2]
       end
     end
   end
