@@ -174,7 +174,7 @@ defmodule Configex.Types do
 
   defp do_cast_struct(struct, values) do
     try do
-      {:ok, struct!(struct, values)}
+      {:ok, struct(struct, values)}
     rescue
       ArgumentError ->
         {:error, :error}
