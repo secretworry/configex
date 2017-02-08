@@ -139,7 +139,7 @@ defmodule Configex.Builder do
         end
         case result do
           {:ok, nil} -> {:ok, config.default}
-          {:ok, _} = ok -> ok
+          {:ok, value} -> Configex.Types.cast(config.type, value)
           {:error, _} = error -> error
           value -> raise "Expect adapter to return {:ok, value} of {:error, error} but got #{inspect value}"
         end

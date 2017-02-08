@@ -97,6 +97,14 @@ defmodule ConfigexTest do
     test "return error for key not exist" do
       assert {:error, "Config not_exist does not exist"} == SampleConfig.put(:not_exist, "1")
     end
+
+    test "should put a struct and read it back without error" do
+      config_value = %ConfigValue{key: "test"}
+      :ok = SampleConfig.put(:struct_config, config_value)
+      :ok = SampleConfig.changed!
+      assert SampleConfig.get!(:struct_config)
+          == config_value
+    end
   end
 
   describe "cast/2" do

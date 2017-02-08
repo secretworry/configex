@@ -32,6 +32,7 @@ defmodule Configex.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:gettext, "~> 0.11"}]
+    [{:gettext, "~> 0.11"},
+     {:poison, "~> 3.0", only: :test}]
   end
 end
